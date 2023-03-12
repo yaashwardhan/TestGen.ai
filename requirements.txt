@@ -1,0 +1,13 @@
+flashtext==2.7
+Flask==2.2.3
+nltk==3.8.1
+numpy==1.23.3
+pke==2.0.0
+scikit_learn==1.2.2
+sense2vec==2.0.1
+sentence_transformers==2.2.2
+similarity==0.0.1
+strsim==0.0.3
+textwrap3==0.9.2
+torch==1.13.1
+transformers==4.20.1

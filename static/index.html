@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <link rel="stylesheet" href="static/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="static/scripts/postAjaxHandler.js"></script>
+  <script src="static/scripts/wordCount.js"></script>
+  <script src="static/scripts/sliderDynamics.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
+  <script src="http://127.0.0.1:5500/livereload.js"></script>
+  <body>
+    <nav>
+      <img src="static/assets/icon.png" id="logo" />
+      <ul>   
+        <li><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Logout</a></li>
+      </ul>
+    </nav>
+    <div  style="padding-top: 20px;padding-bottom: 20px;padding-left: 40px;padding-right: 40px;">
+      <br>
+      <p class="headings">Generate Quiz</p>
+      <p class="subheadings">Multiple Choice Questions</p>
+      <br>
+      <p class="subsubheadings">Maximum Words: 350</p>
+      <form>
+        <label for="context" class="subsubheadings" style="font-size: 12px;">Word Count: <span id="word-count" style="color: greenyellow;">0</span></label><br><br>
+        <div style="display:flex;">
+          <div style="display:flex; flex-direction: column; align-items: flex-start;">
+            <textarea class="contextPara" id="context" name="context" rows="20" cols="60" style="color: #ffc475;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners, as well as experienced developers who want to work more efficiently. 
+
+Python is a versatile language that can be used for a wide variety of tasks. It's commonly used in web development to build websites and web applications. It's also popular in scientific computing and data analysis, where it's used to analyze and manipulate large datasets. 
+
+In addition, Python is commonly used in artificial intelligence and machine learning, where it's used to develop intelligent systems that can learn and make decisions based on data. One of the reasons why Python is so popular is because it has a large and active community. There are many libraries and tools available that can help you get started with Python and accomplish your goals more quickly. 
+
+Additionally, Python is an open-source language, which means that it's free to use and modify. Overall, Python is a powerful and versatile programming language that's easy to learn and use. Whether you're just starting out or you're an experienced developer, Python can help you build a wide variety of projects and accomplish your goals more quickly and efficiently.</textarea><br>
+            <div style="margin-right:0px;">
+              <label for="question-count" class="subsubheadings">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label><br>
+              <input type="range" id="question-count" min="0" max="10" step="1" value="0"><br><br>
+            </div>
+            <div>
+              <label for="incorrect-options-count" class="subsubheadings">Number of Incorrect Options:</label>
+              <input type="number" id="incorrect-options-count" name="incorrect-options-count" min="1" max="4" value="3"><br><br>
+            </div>
+      
+            <input type="submit" class="bn632" value="Generate Questions">
+          </div>
+          <div style="display:flex; flex-direction: column;margin-left:40px;">
+            <div id="loading-screen">
+              <img width=220px src="static/assets/NN-spinner.gif">
+            </div>
+            <div id="questions" style="color:white; font-family: 'Poppins', sans-serif;"></div>
+          </div>
+        </div>  
+      </form> 
+    </div>
+  </body>
+</html>
+
