@@ -6,11 +6,10 @@ $(document).ready(function() {
     event.preventDefault();
     var context = $('#context').val();
     var questionCount = $('#question-count').val();
-    var incorrectOptionsCount = $('#incorrect-options-count').val();
-    
+
     // Show loading screen
     $('#loading-screen').show();
-
+    $('#questions').html('');
     $.ajax({
       type: 'POST',
       url: '/generate-questions',
@@ -18,20 +17,70 @@ $(document).ready(function() {
       data: JSON.stringify({
         'context': context,
         'questionCount': questionCount,
-        'incorrectOptionsCount': incorrectOptionsCount
       }),
       success: function(response) {
-        var questionsHtml = response['questions'].replace(/\\n/g, '<br>').replace(/"/g, '');
-        $('#questions').html(questionsHtml);
-        console.log(response);
+        var questions = response['questions'];
+        var correctAnswers = response['correctAnswers'];
+        var distractor1 = response['distractor1'];
+        var distractor2 = response['distractor2'];
+        var distractor3 = response['distractor3'];
+        var html = '';
         
+        for (var i = 0; i < questions.length; i++) {
+          var options = [correctAnswers[i]].concat(distractor1[i]).concat(distractor2[i]).concat(distractor3[i]);
+          html += '<div class="question">';
+          html += '<p>' + questions[i] + '</p>';
+          html += '<ul class="options" data-question="' + i + '" data-group="' + i + '">';
+          html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[0] + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[1] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[2] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[3] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          
+          html += '<div class="custom-option"><input type="text" placeholder="Add answer"><span class="add-option">+</span></div>';
+    
+          html += '</ul>';
+          html += '</div>';
+      }
+      $('#questions').html(html);
+      console.log(questions);
+      console.log(correctAnswers);
+      console.log(distractor1);
+      console.log(distractor2);
+      console.log(distractor3);
+      $('.options').each(function() {
+          new Sortable(this, {
+              group: $(this).data('group'),
+              animation: 150,
+              filter: '.add-option'
+          });
+      });
+
+      
+      // Remove option
+      $(document).on('click', '.remove-option', function() {
+        $(this).parent().remove();
+      });
+  
+      // Add custom option
+      $(document).on('click', '.add-option', function() {
+        var $input = $(this).prev('input');
+        var value = $input.val();
+        if (value.trim() !== '') {
+          var $ul = $(this).parent().parent();
+          var questionIndex = $ul.attr('data-question');
+          var $li = $('<li>', {'class': 'option', 'data-value': value}).text(value);
+          $li.append('<span class="remove-option" style="color:#CC5500;">&#8998;</span>');
+          $ul.append($li);
+          $input.val('');
+        }
+      });
+
+      
         // Hide loading screen
         $('#loading-screen').hide();
       },
       error: function(xhr, status, error) {
         console.log(xhr.responseText);
-        
-        // Hide loading screen
         $('#loading-screen').hide();
       }
     });

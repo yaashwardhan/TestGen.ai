@@ -14,9 +14,15 @@ def generate_questions_endpoint():
     data = request.get_json()
     context = data['context']
     question_count = int(data['questionCount'])
-    incorrect_options_count = int(data['incorrectOptionsCount'])
-    questions = generate_question(context, question_count, incorrect_options_count)
-    return jsonify({'questions': json.dumps(questions)})
+    questions, correctAnswers, distractor1, distractor2, distractor3= generate_question(context, question_count)
+    response = {
+        'questions': questions,
+        'correctAnswers': correctAnswers,
+        'distractor1': distractor1,
+        'distractor2': distractor2,
+        'distractor3': distractor3
+    }
+    return jsonify(response)
 
 # if __name__ == '__main__':
 #     app.run(debug=False)

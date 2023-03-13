@@ -179,22 +179,35 @@ def get_distractors (word,origsentence,sense2vecmodel,sentencemodel,top_n,lambda
 
 
 
-def generate_question(context, questionCount, IncorrectOptionsCount):
+def generate_question(context, questionCount):
     summary_text = context
     np = get_keywords(context, summary_text, questionCount)
-    output = ""
+    questions = []
+    correctAnswers = []
+    distractor1 = []
+    distractor2 = []
+    distractor3 = []
     for answer in np:
         ques = get_question(summary_text, answer, question_model, question_tokenizer)
         distractors = get_distractors(answer.capitalize(), ques, s2v, sentence_transformer_model, 40, 0.2)
-        output = output +  ques + "\n"
-        output = output + "Ans: " + answer.capitalize() + "\n" 
-
+        questions.append(ques)
+        correctAnswers.append(answer.capitalize())
         if len(distractors) > 0:
-            for distractor in distractors[:IncorrectOptionsCount]:
-                output = output +  distractor + "\n"
+            for i, distractor in enumerate(distractors[:4]):
+              if i == 0:
+                  distractor1.append(distractor)
+              elif i == 1:
+                  distractor2.append(distractor)
+              elif i == 2:
+                  distractor3.append(distractor)
         else:
-            output = output + "Ignore Question. Couldnt Find Distractors" + "\n"
-        output = output + "\n"
+            for i, distractor in enumerate(distractors[:4]):
+              if i == 0:
+                  distractor1.append("Couldnt Generate")
+              elif i == 1:
+                  distractor2.append("Couldnt Generate")
+              elif i == 2:
+                  distractor3.append("Couldnt Generate")
 
-    output = output + "\n"
-    return output 
+    print(questions, correctAnswers, distractor1, distractor2, distractor3)
+    return questions, correctAnswers, distractor1, distractor2, distractor3

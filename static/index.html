@@ -7,6 +7,8 @@
   <script src="static/scripts/sliderDynamics.js"></script>
   <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
   <script src="http://127.0.0.1:5500/livereload.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+  <link rel="shortcut icon" href="#">
   <body>
     <nav>
       <img src="static/assets/icon.png" id="logo" />
@@ -26,7 +28,7 @@
         <label for="context" class="subsubheadings" style="font-size: 12px;">Word Count: <span id="word-count" style="color: greenyellow;">0</span></label><br><br>
         <div style="display:flex;">
           <div style="display:flex; flex-direction: column; align-items: flex-start;">
-            <textarea class="contextPara" id="context" name="context" rows="20" cols="60" style="color: #ffc475;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners, as well as experienced developers who want to work more efficiently. 
+            <textarea class="contextPara" id="context" name="context" rows="20" cols="60" style="color: #ffc475;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners who want to work more efficiently.  
 
 Python is a versatile language that can be used for a wide variety of tasks. It's commonly used in web development to build websites and web applications. It's also popular in scientific computing and data analysis, where it's used to analyze and manipulate large datasets. 
 
@@ -35,24 +37,64 @@ In addition, Python is commonly used in artificial intelligence and machine lear
 Additionally, Python is an open-source language, which means that it's free to use and modify. Overall, Python is a powerful and versatile programming language that's easy to learn and use. Whether you're just starting out or you're an experienced developer, Python can help you build a wide variety of projects and accomplish your goals more quickly and efficiently.</textarea><br>
             <div style="margin-right:0px;">
               <label for="question-count" class="subsubheadings">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label><br>
-              <input type="range" id="question-count" min="0" max="10" step="1" value="0"><br><br>
-            </div>
-            <div>
-              <label for="incorrect-options-count" class="subsubheadings">Number of Incorrect Options:</label>
-              <input type="number" id="incorrect-options-count" name="incorrect-options-count" min="1" max="4" value="3"><br><br>
-            </div>
-      
+              <input type="range" id="question-count" min="1" max="10" step="1" value="1"><br><br>
+            </div> 
             <input type="submit" class="bn632" value="Generate Questions">
           </div>
           <div style="display:flex; flex-direction: column;margin-left:40px;">
             <div id="loading-screen">
-              <img width=220px src="static/assets/NN-spinner.gif">
+              <img width=420px src="static/assets/NN-spinner.gif">
             </div>
-            <div id="questions" style="color:white; font-family: 'Poppins', sans-serif;"></div>
+            
+            <div id="questions" class = "questionHeading" style="color:white; font-family: 'Poppins', sans-serif;"></div>
+            
           </div>
         </div>  
       </form> 
+      <button id="save-button" style="float: right;" class="bn632">Save Questions</button>
     </div>
   </body>
+
+
+  <script>
+    // Save questions to JSON file
+    $('#save-button').click(function() {
+      var questionsData = [];
+
+      $('.question').each(function() {
+        var question = $(this).find('p').text();
+        var options = [];
+
+        $(this).find('.option').each(function() {
+          var option = $(this).text();
+          options.push(option);
+        });
+
+        var questionData = {
+          'question': question,
+          'options': options
+        };
+
+        questionsData.push(questionData);
+      });
+  
+      var json = JSON.stringify(questionsData, null, 2).replace(/\u2326/g, '').replace(/\u2630/g, '');
+      console.log(json);
+      var blob = new Blob([json], {type: "application/json"});
+      var url  = URL.createObjectURL(blob);
+
+      var a = document.createElement('a');
+      a.download = 'questions.json';
+      a.href = url;
+      a.textContent = 'Download questions';
+      document.body.appendChild(a);
+
+      a.click();
+
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+
 </html>
 
