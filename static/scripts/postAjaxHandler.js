@@ -31,10 +31,10 @@ $(document).ready(function() {
           html += '<div class="question">';
           html += '<p>' + questions[i] + '</p>';
           html += '<ul class="options" data-question="' + i + '" data-group="' + i + '">';
-          html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[0] + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[1] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[2] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[3] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[0] + '<span class="extra-space"></span>' + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[1] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[2] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[3] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
           
           html += '<div class="custom-option"><input type="text" placeholder="Add answer"><span class="add-option">+</span></div>';
     
@@ -69,7 +69,9 @@ $(document).ready(function() {
           var $ul = $(this).parent().parent();
           var questionIndex = $ul.attr('data-question');
           var $li = $('<li>', {'class': 'option', 'data-value': value}).text(value);
-          $li.append('<span class="remove-option" style="color:#CC5500;">&#8998;</span>');
+          $li.prepend('<span class="little-space"></span>');
+          $li.prepend("<span style='color:dimgrey;'>&#9776;</span>");
+          $li.append('<span class="extra-space"></span>'+'<span class="remove-option" style="color:#CC5500;">&#8998;</span>');
           $ul.append($li);
           $input.val('');
         }

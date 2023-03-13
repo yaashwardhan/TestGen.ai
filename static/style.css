@@ -40,8 +40,8 @@ display: none;
   color:#eeeeee; 
   font-size: 18px;
   font-weight: 500;
-  font-family: 'Poppins', 
-  sans-serif;
+  font-family: 'Poppins', sans-serif;
+  width: 400px;
 }
 .contextPara {
     background-color: #202831;
@@ -180,16 +180,16 @@ li.option {
   padding: 8px; /* add some padding to the element */
   margin-bottom: 2px;
   box-sizing: border-box; /* include padding in the width calculation */
-
+  border-radius: 10px;
 }
 
-li.option span:first-child {
-  flex: 1;
-  text-align: left;
-}
- 
 
-li.option span.remove-option {
-  flex: 5;
+li.option span.little-space {
+  flex: 1; text-align: left;
+}
+
+
+li.option span.extra-space {
+  flex: 14;
   color: #CC5500;text-align: right;
 }
