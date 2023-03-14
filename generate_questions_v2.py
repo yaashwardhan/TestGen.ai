@@ -166,7 +166,6 @@ def filter_similar(phrase_keys, max_phrases, normalized_levenshtein):
             break
     return filtered_phrases
 
-
 def get_nouns_multipartite(text):
     """
     Extract the top 10 candidate keyphrases from a given text using the MultipartiteRank algorithm.
@@ -178,19 +177,26 @@ def get_nouns_multipartite(text):
         list: List of top 10 candidate keyphrases.
     """
     out = []
+
     extractor = pke.unsupervised.MultipartiteRank()
     extractor.load_document(input=text, language='en')
     pos = {'PROPN', 'NOUN'}
-    stoplist = list(string.punctuation) + stopwords.words('english')
-    extractor.candidate_selection(pos=pos, stoplist=stoplist)
+    stoplist = list(string.punctuation)
+    stoplist += stopwords.words('english')
+    extractor.candidate_selection(pos=pos)
     try:
-        extractor.candidate_weighting(alpha=1.1, threshold=0.75, method='average')
+        extractor.candidate_weighting(alpha=1.1,
+                                      threshold=0.75,
+                                      method='average')
     except:
         return out
-    keyphrases = extractor.get_n_best(n=10)
-    out = [key[0] for key in keyphrases]
-    return out
 
+    keyphrases = extractor.get_n_best(n=10)
+
+    for key in keyphrases:
+        out.append(key[0])
+
+    return out
 
 def extract_document_phrases(doc):
     """
