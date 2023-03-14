@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <link rel="stylesheet" href="static/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="static/scripts/postAjaxHandler.js"></script>
+  <script src="static/scripts/wordCount.js"></script>
+  <script src="static/scripts/sliderDynamics.js"></script>
+  <script src="static/scripts/validateRange.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
+  <script src="http://127.0.0.1:5500/livereload.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+  <link rel="shortcut icon" href="#">
+  <body>
+    <nav>
+      <img src="static/assets/icon.png" id="logo" />
+      <ul>   
+        <li><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Logout</a></li>
+      </ul>
+    </nav>
+    <div style="padding-top: 10px;padding-bottom: 20px;">
+      <div style="display:flex">
+        <div style="flex: 6;">
+          <br>
+          <p class="headings" style="padding-top: 10px;padding-left: 40px;padding-right: 40px;">A.I. Quiz Generation</p>
+          <p class="subheadings" style="padding-left: 40px;padding-right: 40px;">Multiple Choice Questions</p>
+          <br>
+          <p class="subsubheadings" style="color:#b2b2b2;padding-left: 40px;padding-right: 40px;">Enter your context on the left to generate multiple choice<br>questions and answers based on it on the right.<br>You can add and delete answers</p><br><br><br>
+          <p class="subsubheadings" style="padding-top: 10px;padding-bottom: 10px;padding-left: 40px;padding-right: 40px;">Maximum Words: 350</p>
+        </div>
+        <div style="flex: 7; text-align: center;">
+          <img src="static/assets/gradientImage.png" style="max-width: 100%; height: auto;">
+        </div>
+      </div>   
+      <form onsubmit="return validateRange()" style="padding-left: 40px;padding-right: 40px;">
+        <hr style="border-top: 1px solid #616161; margin-top: 5px; margin-bottom: 20px;">
+        <label for="context" class="subsubheadings" style="font-size: 12px;">Current Word Count: <span id="word-count" style="color: greenyellow;">0</span></label><br>
+        <div style="display:flex;padding-top: 10px;">
+
+          <div style="display:flex; flex-direction: column; align-items: flex-start; flex-grow: 4;">
+            <textarea class="contextPara" id="context" name="context" rows="18" style="color: #ffc475;width: 100%;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners who want to work more efficiently.  
+
+Python is a versatile, so it can be used for many tasks. It's commonly used in web development to build websites and web applications. It's also popular in scientific computing, where it's used to analyze and manipulate large datasets. 
+
+In addition, Python is commonly used in artificial intelligence and machine learning, where it's used to develop intelligent systems that can learn and make decisions based on data. One of the reasons why Python is so popular is because it has a large and active community. There are many libraries and tools available that can help you get started with Python and accomplish your goals more quickly. 
+
+Additionally, Python is an open-source language, which means that it's free to use and modify. Overall, Python is a powerful and versatile and is easy to learn and use. Whether you're just starting out or you're an experienced developer, Python can help you build a wide variety of projects and accomplish your goals more quickly and efficiently.</textarea><br>
+            <div style="margin-right:0px;">
+              <label for="question-count" class="subsubheadings">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label><br>
+              <input type="range" id="question-count" min="0" max="10" step="1" value="1"><br><br>
+            </div> 
+            <input type="submit" class="bn632" value="Generate Questions">
+          </div>
+
+          <div style="display:flex; flex-direction: column;margin-left:40px;flex-grow: 3; justify-content: center; align-items: center;">
+            <div id="loading-screen" style="padding-bottom: 150px;">
+              <img width=340px src="static/assets/NN-spinner.gif">
+            </div>
+            <div id="questions" class = "questionHeading"><img style="padding-bottom: 147px;padding-left: 30px;color: #fff;" width=340px src="static/assets/NN-spinner2.png"></div>
+          </div>
+
+        </div>  
+      </form> 
+      <button id="save-button" style="float: right;" class="bn632">Save Questions</button>
+    </div>
+  </body>
+
+
+  <script>
+    // Save questions to JSON file
+    $('#save-button').click(function() {
+      var questionsData = [];
+
+      $('.question').each(function() {
+        var question = $(this).find('p').text();
+        var options = [];
+
+        $(this).find('.option').each(function() {
+          var option = $(this).text();
+          options.push(option);
+        });
+
+        var questionData = {
+          'question': question,
+          'options': options
+        };
+
+        questionsData.push(questionData);
+      });
+  
+      var json = JSON.stringify(questionsData, null, 2).replace(/\u2326/g, '').replace(/\u2630/g, '').replace(/\u270E/g,'');
+      console.log(json);
+      var blob = new Blob([json], {type: "application/json"});
+      var url  = URL.createObjectURL(blob);
+
+      var a = document.createElement('a');
+      a.download = 'questions.json';
+      a.href = url;
+      a.textContent = 'Download questions';
+      document.body.appendChild(a);
+
+      a.click();
+
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+
+</html>
+
