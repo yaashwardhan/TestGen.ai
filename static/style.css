@@ -18,6 +18,22 @@ display: none;
   sans-serif;
   margin: 0px;
 }
+
+
+
+.smallheadings{
+  padding-top: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+  color:white; 
+  font-size: 34px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  margin: 0px;
+  text-align: center;
+}
+
+
 .subheadings{
   margin: 0px;
   color:#b2b2b2; 
@@ -34,6 +50,17 @@ display: none;
   font-family: 'Poppins', 
   sans-serif;
 }
+
+.subsubheadings2{
+  margin-left: 16px;
+  color:#eeeeee; 
+  font-size: 24px;
+  font-weight: 600;
+  font-family: 'Poppins', 
+  sans-serif;
+  
+}
+
 
 .questionHeading{
   margin: 0px;
@@ -93,10 +120,11 @@ display: none;
   }
 
 nav {
-    margin:0;display: flex;
+    margin:0;
+    display: flex;
     padding: 0;
     background-color: #161B22;
-    font-family: "Roboto", sans-serif;align-items: center; font-weight: 400;
+    font-family: "Poppins", sans-serif;align-items: center; font-weight: 400;
   }
   
   /* Remove default list styles and display menu items horizontally */
@@ -114,7 +142,7 @@ nav {
   nav a {margin:0;padding: 0;
     color: #fff;
     text-decoration: none;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
     padding: 20px;
     display: block;
@@ -129,7 +157,9 @@ nav {
   
   /* Apply a hover effect to menu items */
   nav a:hover {
-    background-color: #333;
+    background-color: #FFA747;
+    color: #000;
+
   }
 
   .bn632{
@@ -160,7 +190,7 @@ nav {
 .option{
   margin: 0px;
   color:#eeeeee; 
-  font-size: 14px;
+  font-size: 12.9px;
   font-weight: 300;
   font-family: 'Poppins', 
   sans-serif;
@@ -176,20 +206,133 @@ li.option {
   justify-content: space-between; /* align text to the left and icon to the right */
   align-items: center; /* vertically center text and icon */
   width: 100%; /* set the width of the element to 100% */
-  background-color: #202831; /* add a grey background color */
+  background-color: #161B22; /* add a grey background color */
   padding: 8px; /* add some padding to the element */
-  margin-bottom: 2px;
+  margin-bottom: 5px;
   box-sizing: border-box; /* include padding in the width calculation */
   border-radius: 10px;
 }
 
 
-li.option span.little-space {
-  flex: 1; text-align: left;
+.custom-option{
+  display: flex; /* make the element a flex container */
+  justify-content: center; /* align text to the left and icon to the right */
+  align-items: center; /* vertically center text and icon */
+  width: 100%; /* set the width of the element to 100% */
+  background-color: #161B22; /* add a grey background color */
+  padding-top: 7px; 
+  padding-bottom: 7px;/* add some padding to the element */
+  margin-bottom: 2px;
+  box-sizing: border-box; /* include padding in the width calculation */
+  border-radius: 10px;
+}
+
+.my-input::placeholder {
+  color: #979797;font-size: 14px;
 }
 
 
-li.option span.extra-space {
-  flex: 14;
-  color: #CC5500;text-align: right;
+.my-input {
+  border: 1px solid black;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 15px;
+  background-color: #3f4e5f;
+  font-size: 16px;
+  border-radius: 10px;
+  color: white;
+}
+.add-option{
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+  color: rgb(60, 66, 87);
+  background-color: rgb(255, 255, 255);
+  box-shadow: rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(0 0 0 / 12%) 0px 1px 1px 0px, rgb(60 66 87 / 16%) 0px 0px 0px 1px, rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(60 66 87 / 8%) 0px 2px 5px 0px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 20px;
+  padding: 4px 10px;
+  display: inline-block;
+  transition: background-color .24s,box-shadow .24s;
+  cursor: pointer;
+}
+
+.add-option:hover {
+  box-shadow: rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(0 0 0 / 12%) 0px 1px 1px 0px, rgb(60 66 87 / 16%) 0px 0px 0px 1px, rgb(0 0 0 / 0%) 0px 0px 0px 0px, rgb(60 66 87 / 8%) 0px 3px 9px 0px, rgb(60 66 87 / 8%) 0px 2px 5px 0px;
+}
+
+.question-container{
+  background-color: #202831;
+  padding-top: 1px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 10px;
+  padding-bottom: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+
+}
+.lightHr{opacity: 0.3;
+  border-top: 1px solid white;
+}
+.question-container-outer{
+  background-color: #161B22;
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 10px;
+  padding-bottom: 5px;
+}
+
+
+/* Range */
+
+
+input[type="range"]{
+  -webkit-appearance:none;
+  appearance: none; 
+  width:160px;
+  height:20px;
+  margin: 0px;
+  background: linear-gradient(to right, #325C74 0%, #325C74 100%);
+  background-size:150px 10px;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
+  outline: none;
+}
+
+input[type="range"]:first-of-type{
+   margin: 10px;
+}
+
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;
+  height:20px;
+  background:#B2DFEE;
+  position:relative;
+  z-index:3;
+  box-shadow:0 0 5px 0 rgba(0,0,0,0.3);
+}
+
+input[type="range"]::-webkit-slider-thumb:after{
+  content:" ";
+  width:160px;
+  height:10px;
+  position:absolute;
+  z-index:1;
+  right:20px;
+  top:5px;
+  background: #B2DFEE;
+  background: linear-gradient(to right, #f088fc 1%, #AC6CFF 70%);
+}
+
+.question-text input.edit-question {
+  display: none;
+}
+.question-text.editing input.edit-question {
+  display: inline-block;
 }

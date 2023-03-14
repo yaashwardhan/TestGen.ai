@@ -5,8 +5,16 @@ document.addEventListener("DOMContentLoaded", function() {
   
     function updateSliderMax() {
       const wordCount = textarea.value.trim().split(/\s+/).length;
-  
-      if (wordCount <= 200) {
+      if (wordCount <= 10) {
+        slider.max = 0;
+      }
+      else if (wordCount > 10 && wordCount <= 20) {
+        slider.max = 1;
+      } 
+      else if (wordCount > 20 && wordCount <= 40) {
+        slider.max = 2;
+      }
+      else if (wordCount > 40 && wordCount <= 200) {
         slider.max = 3;
       } else {
         slider.max = 5;

@@ -6,6 +6,7 @@ $(document).ready(function() {
     event.preventDefault();
     var context = $('#context').val();
     var questionCount = $('#question-count').val();
+    console.log(questionCount);
 
     // Show loading screen
     $('#loading-screen').show();
@@ -25,22 +26,28 @@ $(document).ready(function() {
         var distractor2 = response['distractor2'];
         var distractor3 = response['distractor3'];
         var html = '';
-        
+        html += '<div class="question-container-outer">';
+        html += '<p class="smallheadings">Generated MCQ</p>';
         for (var i = 0; i < questions.length; i++) {
-          var options = [correctAnswers[i]].concat(distractor1[i]).concat(distractor2[i]).concat(distractor3[i]);
+          var options = ['Ans: '+correctAnswers[i]].concat(distractor1[i]).concat(distractor2[i]).concat(distractor3[i]);
+          html += '<hr class="lightHr">';
+          html += '<div class="question-container">';
           html += '<div class="question">';
-          html += '<p>' + questions[i] + '</p>';
+          html += '<div class="question-sidebyside" style="display: flex;align-items: center;"><span class="edit-icon" style="flex: 1;display: flex; justify-content: center; align-items: center;">&#9998;</span><p class="edit-question" style="flex: 7; " contenteditable>' + questions[i] + '</p></div>';
+
           html += '<ul class="options" data-question="' + i + '" data-group="' + i + '">';
-          html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[0] + '<span class="extra-space"></span>' + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[1] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[2] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +'<span class="little-space"></span>'+ options[3] +'<span class="extra-space"></span>' +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +options[0]  + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[1] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[2] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
+          html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[3] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
           
-          html += '<div class="custom-option"><input type="text" placeholder="Add answer"><span class="add-option">+</span></div>';
+          html += '<div class="custom-option"><input type="text" class="my-input" placeholder="Extra Choice"><span class="add-option">ADD</span></div>';
     
           html += '</ul>';
           html += '</div>';
+          html += '</div>';
       }
+      html += '</div>';
       $('#questions').html(html);
       console.log(questions);
       console.log(correctAnswers);
@@ -69,14 +76,18 @@ $(document).ready(function() {
           var $ul = $(this).parent().parent();
           var questionIndex = $ul.attr('data-question');
           var $li = $('<li>', {'class': 'option', 'data-value': value}).text(value);
-          $li.prepend('<span class="little-space"></span>');
           $li.prepend("<span style='color:dimgrey;'>&#9776;</span>");
-          $li.append('<span class="extra-space"></span>'+'<span class="remove-option" style="color:#CC5500;">&#8998;</span>');
+          $li.append('<span class="remove-option" style="color:#CC5500;">&#8998;</span>');
           $ul.append($li);
           $input.val('');
         }
       });
-
+      // Add click event listener to edit button/icon
+      $(document).on('click', '.edit-button', function() {
+        var $questionText = $(this).parent();
+        $questionText.toggleClass('editing');
+        $questionText.find('.edit-question').focus();
+      });
       
         // Hide loading screen
         $('#loading-screen').hide();

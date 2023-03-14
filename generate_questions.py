@@ -1,213 +1,673 @@
-import nltk
-# nltk.download('stopwords')
-from nltk.corpus import stopwords
+import random
 import string
-import pke
-import torch
-import traceback
-from flashtext import KeywordProcessor
-from textwrap3 import wrap
-import torch
-from transformers import T5ForConditionalGeneration,T5Tokenizer
-import numpy as np
-from sense2vec import Sense2Vec
-from sentence_transformers import SentenceTransformer
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-from similarity.normalized_levenshtein import NormalizedLevenshtein
-from sklearn.metrics.pairwise import cosine_similarity
+import time
 from collections import OrderedDict
-from sklearn.metrics.pairwise import cosine_similarity
-import nltk
-# nltk.download('omw-1.4')
 
-def get_nouns_multipartite(content):
-    out=[]
+import numpy as np
+import pandas as pd
+import spacy
+import torch
+from similarity.normalized_levenshtein import NormalizedLevenshtein
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+
+import nltk
+from nltk import FreqDist
+from nltk.corpus import brown
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize
+nltk.download('brown')
+nltk.download('popular')
+nltk.download('stopwords')
+
+from typing import List, Tuple
+from flashtext import KeywordProcessor
+from sense2vec import Sense2Vec
+import pke
+
+
+
+
+
+
+def generate_using_sense2vec(word, s2v):
+    output = [] 
+    # Preprocess the input word by removing punctuation and converting to lowercase
+    word_preprocessed = word.translate(str.maketrans('', '', string.punctuation)).lower()
+    # Generate a list of possible edits for the preprocessed word
+    word_edits = edits(word_preprocessed)
+    # Replace spaces in the word with underscores
+    word = word.replace(' ', '_')
+    # Use sense2vec to get the best sense for the word and find the most similar words
+    sense = s2v.get_best_sense(word)
+    most_similar = s2v.most_similar(sense, n=15)
+    # Compare the most similar words with the preprocessed word and append them to the output list if they meet certain criteria
+    compare_list = [word_preprocessed]
+    for each_word in most_similar:
+        append_word = each_word[0].split('|')[0].replace('_', ' ').strip()
+        append_word_processed = append_word.lower().translate(str.maketrans('', '', string.punctuation))
+        if append_word_processed not in compare_list and word_preprocessed not in append_word_processed and append_word_processed not in word_edits:
+            output.append(append_word.title())
+            compare_list.append(append_word_processed)
+    # Remove duplicates from the output list while preserving the order of elements
+    out = list(OrderedDict.fromkeys(output))
+    return out
+
+
+
+def get_distractors_as_options(answer: str, s2v) -> Tuple[List[str], str]:
+    """
+    Get distractors for a given answer using sense2vec.
+
+    Parameters:
+    answer (str): the answer word for which distractors need to be generated
+    s2v: the sense2vec model
+
+    Returns:
+    distractors (List[str]): a list of distractors for the answer
+    method (str): the method used to generate the distractors, either 'sense2vec' or 'None' if generation failed
+    """
+    distractors = []
     try:
-        extractor = pke.unsupervised.MultipartiteRank()
-        extractor.load_document(input=content,language='en')
-        pos = {'PROPN','NOUN'}
-        stoplist = list(string.punctuation)
-        stoplist += ['-lrb-', '-rrb-', '-lcb-', '-rcb-', '-lsb-', '-rsb-']
-        stoplist += stopwords.words('english')
-        extractor.candidate_selection(pos=pos)
+        distractors = generate_using_sense2vec(answer, s2v)
+        if len(distractors) > 0:
+            print(f"Sense2vec_distractors successful for word: {answer}")
+            return distractors, "sense2vec"
+    except:
+        print(f"Sense2vec_distractors failed for word: {answer}")
+    return distractors, "None"
+
+
+def sentence_tokenize(text: str) -> List[str]:
+    """
+    Tokenize a given text into sentences.
+
+    Parameters:
+    text (str): the text to tokenize
+
+    Returns:
+    sentences (List[str]): a list of sentences
+    """
+    sentences = [sent_tokenize(text)]
+    sentences = [y for x in sentences for y in x]
+    sentences = [sentence.strip() for sentence in sentences if len(sentence) > 20]
+    return sentences
+
+def generate_keyword_sentences(keywords: List[str], sentences: List[str]) -> dict:
+    """
+    Get sentences containing keywords from a list of sentences.
+
+    Parameters:
+    keywords (List[str]): a list of keywords
+    sentences (List[str]): a list of sentences
+
+    Returns:
+    keyword_sentences (dict): a dictionary mapping each keyword to a list of sentences containing that keyword
+    """
+    keyword_processor = KeywordProcessor()
+    keyword_sentences = {}
+    for word in keywords:
+        word = word.strip()
+        keyword_sentences[word] = []
+        keyword_processor.add_keyword(word)
+    for sentence in sentences:
+        keywords_found = keyword_processor.extract_keywords(sentence)
+        for key in keywords_found:
+            keyword_sentences[key].append(sentence)
+
+    for key in keyword_sentences.keys():
+        values = keyword_sentences[key]
+        values = sorted(values, key=len, reverse=True)
+        keyword_sentences[key] = values
+
+    delete_keys = []
+    for k in keyword_sentences.keys():
+        if len(keyword_sentences[k]) == 0:
+            delete_keys.append(k)
+    for del_key in delete_keys:
+        del keyword_sentences[del_key]
+
+    return keyword_sentences
+
+
+def word_determination(words_list, current_word, threshold, normalized_levenshtein):
+    """
+    Determine if a word is far enough from a list of words based on the normalized Levenshtein distance.
+
+    Args:
+        words_list (list): List of words to compare with.
+        current_word (str): Word to compare.
+        threshold (float): Threshold value to determine if the word is far enough.
+        normalized_levenshtein (object): NormalizedLevenshtein object from the jellyfish library.
+
+    Returns:
+        bool: True if the word is far enough from all the words in the list, False otherwise.
+    """
+    score_list = [normalized_levenshtein.distance(word.lower(), current_word.lower()) for word in words_list]
+    return min(score_list) >= threshold
+
+
+def filter_similar(phrase_keys, max_phrases, normalized_levenshtein):
+    """
+    Filter a list of phrases based on their similarity using the normalized Levenshtein distance.
+
+    Args:
+        phrase_keys (list): List of phrases to filter.
+        max_phrases (int): Maximum number of phrases to return.
+        normalized_levenshtein (object): NormalizedLevenshtein object from the jellyfish library.
+
+    Returns:
+        list: List of filtered phrases.
+    """
+    filtered_phrases = [phrase_keys[0]]
+    for phrase in phrase_keys[1:]:
+        if word_determination(filtered_phrases, phrase, 0.8, normalized_levenshtein):
+            filtered_phrases.append(phrase)
+        if len(filtered_phrases) >= max_phrases:
+            break
+    return filtered_phrases
+
+def get_nouns_multipartite(text):
+    """
+    Extract the top 10 candidate keyphrases from a given text using the MultipartiteRank algorithm.
+
+    Args:
+        text (str): Text to extract keyphrases from.
+
+    Returns:
+        list: List of top 10 candidate keyphrases.
+    """
+    out = []
+
+    extractor = pke.unsupervised.MultipartiteRank()
+    extractor.load_document(input=text, language='en')
+    pos = {'PROPN', 'NOUN'}
+    stoplist = list(string.punctuation)
+    stoplist += stopwords.words('english')
+    extractor.candidate_selection(pos=pos)
+    try:
         extractor.candidate_weighting(alpha=1.1,
                                       threshold=0.75,
                                       method='average')
-        keyphrases = extractor.get_n_best(n=15)
-        for val in keyphrases:
-            out.append(val[0])
     except:
-        out = []
-        traceback.print_exc()
+        return out
+
+    keyphrases = extractor.get_n_best(n=10)
+
+    for key in keyphrases:
+        out.append(key[0])
+
     return out
 
-def get_keywords(originaltext,summarytext,questionCount):
-  keywords = get_nouns_multipartite(originaltext)
-  # print ("keywords unsummarized: ",keywords)
-  keyword_processor = KeywordProcessor()
-  for keyword in keywords:
-    keyword_processor.add_keyword(keyword)
+def extract_document_phrases(doc):
+    """
+    Extract noun phrases from a given document and return a list of the top 50 phrases.
 
-  keywords_found = keyword_processor.extract_keywords(summarytext)
-  keywords_found = list(set(keywords_found))
-  # print ("keywords_found in summarized: ",keywords_found)
+    Args:
+        doc (spacy.Doc): Document to extract noun phrases from.
 
-  important_keywords =[]
-  for keyword in keywords:
-    if keyword in keywords_found:
-      important_keywords.append(keyword)
-
-  return important_keywords[:questionCount]
-
-question_model = T5ForConditionalGeneration.from_pretrained('t5New/model')
-question_tokenizer = T5Tokenizer.from_pretrained('t5New/tokenizer')
-
-
-question_model = question_model.to(device)
-
-def get_question(context,answer,model,tokenizer):
-  text = "context: {} answer: {}".format(context,answer)
-  encoding = tokenizer.encode_plus(text,max_length=384, pad_to_max_length=False,truncation=True, return_tensors="pt").to(device)
-  input_ids, attention_mask = encoding["input_ids"], encoding["attention_mask"]
-
-  outs = model.generate(input_ids=input_ids,
-                                  attention_mask=attention_mask,
-                                  early_stopping=True,
-                                  num_beams=5,
-                                  num_return_sequences=1,
-                                  no_repeat_ngram_size=2,
-                                  max_length=72)
+    Returns:
+        list: List of the top 50 noun phrases.
+    """
+    phrases = {}
+    for np in doc.noun_chunks:
+        phrase = np.text
+        len_phrase = len(phrase.split())
+        if len_phrase > 1:
+            if phrase not in phrases:
+                phrases[phrase] = 1
+            else:
+                phrases[phrase] += 1
+    phrase_keys = sorted(phrases.keys(), key=lambda x: len(x), reverse=True)[:50]
+    return phrase_keys
 
 
-  dec = [tokenizer.decode(ids,skip_special_tokens=True) for ids in outs]
+def edits(word):
+    # Return all edits that are one edit away from the input word
+    letters = 'abcdefghijklmnopqrstuvwxyz ' + string.punctuation
+    splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+    deletes = [L + R[1:] for L, R in splits if R]
+    transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1]
+    replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
+    inserts = [L + c + R for L, R in splits for c in letters]
+    return set(deletes + transposes + replaces + inserts)
 
 
-  Question = dec[0].replace("question:","")
-  Question= Question.strip()
-  return Question
+def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
+    doc = nlp(text)
+    max_keywords = int(max_keywords)
 
-s2v = Sense2Vec().from_disk('s2v_old')
-sentence_transformer_model = SentenceTransformer('msmarco-distilbert-base-v3')
-normalized_levenshtein = NormalizedLevenshtein()
+    keywords = get_nouns_multipartite(text)
+    keywords = sorted(keywords, key=lambda x: fdist[x])
+    keywords = filter_similar(keywords, max_keywords,normalized_levenshtein )
 
-def filter_same_sense_words(original,wordlist):
-  filtered_words=[]
-  base_sense =original.split('|')[1] 
-  # print (base_sense)
-  for eachword in wordlist:
-    if eachword[0].split('|')[1] == base_sense:
-      filtered_words.append(eachword[0].split('|')[0].replace("_", " ").title().strip())
-  return filtered_words
+    phrase_keys = extract_document_phrases(doc)
+    filtered_phrases = filter_similar(phrase_keys, max_keywords,normalized_levenshtein )
 
-def get_highest_similarity_score(wordlist,wrd):
-  score=[]
-  for each in wordlist:
-    score.append(normalized_levenshtein.similarity(each.lower(),wrd.lower()))
-  return max(score)
+    total_phrases = keywords + filtered_phrases
 
-def sense2vec_get_words(word,s2v,topn,question):
-    output = []
-    # print ("word ",word)
-    try:
-      sense = s2v.get_best_sense(word, senses= ["NOUN", "PERSON","PRODUCT","LOC","ORG","EVENT","NORP","WORK OF ART","FAC","GPE","NUM","FACILITY"])
-      most_similar = s2v.most_similar(sense, n=topn)
-      # print (most_similar)
-      output = filter_same_sense_words(sense,most_similar)
-      # print ("Similar ",output)
-    except:
-      output =[]
+    total_phrases_filtered = filter_similar(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
 
-    threshold = 0.6
-    final=[word]
-    checklist =question.split()
-    for x in output:
-      if get_highest_similarity_score(final,x)<threshold and x not in final and x not in checklist:
-        final.append(x)
+
+    answers = []
+    for answer in total_phrases_filtered:
+        if answer not in answers and check_distractors(answer,s2v):
+            answers.append(answer)
+
+    answers = answers[:max_keywords]
+    return answers
+
+
+def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
+    batch_text = []
+    answers = keyword_sent_mapping.keys()
+    for answer in answers:
+        txt = keyword_sent_mapping[answer]
+        context = "context: " + txt
+        text = context + " " + "answer: " + answer + " </s>"
+        batch_text.append(text)
+
+    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
+
+
+    print ("Generating...")
+    input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
+
+    with torch.no_grad():
+        outs = model.generate(input_ids=input_ids,
+                              attention_mask=attention_masks,
+                              max_length=150)
+
+    output_array ={}
+    output_array["questions"] =[]
+    for index, val in enumerate(answers):
+        individual_question ={}
+        out = outs[index, :]
+        dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+        Question = dec.replace("question:", "")
+        Question = Question.strip()
+        individual_question["question_statement"] = Question
+        individual_question["question_type"] = "MCQ"
+        individual_question["answer"] = val
+        individual_question["id"] = index+1
+        individual_question["options"], individual_question["options_algorithm"] = get_distractors_as_options(val, sense2vec)
+
+        individual_question["options"] =  filter_similar(individual_question["options"], 10,normalized_levenshtein)
+        index = 3
+        individual_question["extra_options"]= individual_question["options"][index:]
+        individual_question["options"] = individual_question["options"][:index]
+        individual_question["context"] = keyword_sent_mapping[val]
+     
+        if len(individual_question["options"])>0:
+            output_array["questions"].append(individual_question)
+
+    return output_array
+
+def generate_normal_questions(keyword_sent_mapping,device,tokenizer,model):  #for normal one word questions
+    batch_text = []
+    answers = keyword_sent_mapping.keys()
+    for answer in answers:
+        txt = keyword_sent_mapping[answer]
+        context = "context: " + txt
+        text = context + " " + "answer: " + answer + " </s>"
+        batch_text.append(text)
+
+    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
+
+
+    print ("Generating...")
+    input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
+
+    with torch.no_grad():
+        outs = model.generate(input_ids=input_ids,
+                              attention_mask=attention_masks,
+                              max_length=150)
+
+    output_array ={}
+    output_array["questions"] =[]
     
-    return final[1:]
+    for index, val in enumerate(answers):
+        individual_quest= {}
+        out = outs[index, :]
+        dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+        
+        Question= dec.replace('question:', '')
+        Question= Question.strip()
 
-def mmr(doc_embedding, word_embeddings, words, top_n, lambda_param):
+        individual_quest['Question']= Question
+        individual_quest['Answer']= val
+        individual_quest["id"] = index+1
+        individual_quest["context"] = keyword_sent_mapping[val]
+        
+        output_array["questions"].append(individual_quest)
+        
+    return output_array
 
-    # Extract similarity within words, and between words and the document
-    word_doc_similarity = cosine_similarity(word_embeddings, doc_embedding)
-    word_similarity = cosine_similarity(word_embeddings)
+def random_choice():
+    a = random.choice([0,1])
+    return bool(a)
+    
+def decode_greedy(inp_ids, attn_mask, model, tokenizer):
+    # Generate output using greedy decoding
+    output_greedy_decode = model.generate(input_ids=inp_ids, attention_mask=attn_mask, max_length=256)
+    # Decode output and capitalize the first letter
+    question = tokenizer.decode(output_greedy_decode[0], skip_special_tokens=True, clean_up_tokenization_spaces=True).strip().capitalize()
+    return question
 
-    # Initialize candidates and already choose best keyword/keyphrase
-    keywords_idx = [np.argmax(word_doc_similarity)]
-    candidates_idx = [i for i in range(len(words)) if i != keywords_idx[0]]
+def decode_beam(inp_ids, attn_mask, model, tokenizer):
+    # Generate multiple outputs using beam search decoding
+    output_beam_search_decode = model.generate(input_ids=inp_ids, attention_mask=attn_mask, max_length=256, num_beams=10,
+                                 num_return_sequences=3, no_repeat_ngram_size=2, early_stopping=True)
+    # Decode each output and capitalize the first letter
+    questions = [tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True).strip().capitalize() for out in output_beam_search_decode]
+    return questions
 
-    for _ in range(top_n - 1):
-        # Extract similarities within candidates and
-        # between candidates and selected keywords/phrases
-        candidate_similarities = word_doc_similarity[candidates_idx, :]
-        target_similarities = np.max(word_similarity[candidates_idx][:, keywords_idx], axis=1)
-
-        # Calculate MMR
-        mmr = (lambda_param) * candidate_similarities - (1-lambda_param) * target_similarities.reshape(-1, 1)
-        mmr_idx = candidates_idx[np.argmax(mmr)]
-
-        # Update keywords & candidates
-        keywords_idx.append(mmr_idx)
-        candidates_idx.remove(mmr_idx)
-
-    return [words[idx] for idx in keywords_idx]
-
-def get_distractors (word,origsentence,sense2vecmodel,sentencemodel,top_n,lambdaval):
-  distractors = sense2vec_get_words(word,sense2vecmodel,top_n,origsentence)
-  # print ("distractors ",distractors)
-  if len(distractors) ==0:
-    return distractors
-  distractors_new = [word.capitalize()]
-  distractors_new.extend(distractors)
-  # print ("distractors_new .. ",distractors_new)
-
-  embedding_sentence = origsentence+ " "+word.capitalize()
-  # embedding_sentence = word
-  keyword_embedding = sentencemodel.encode([embedding_sentence])
-  distractor_embeddings = sentencemodel.encode(distractors_new)
-
-  # filtered_keywords = mmr(keyword_embedding, distractor_embeddings,distractors,4,0.7)
-  max_keywords = min(len(distractors_new),5)
-  filtered_keywords = mmr(keyword_embedding, distractor_embeddings,distractors_new,max_keywords,lambdaval)
-  # filtered_keywords = filtered_keywords[1:]
-  final = [word.capitalize()]
-  for wrd in filtered_keywords:
-    if wrd.lower() !=word.lower():
-      final.append(wrd.capitalize())
-  final = final[1:]
-  return final
+def check_distractors(word, s2v):
+    # Check if MCQs are available for a given word
+    word_preprocessed = word.translate(str.maketrans('', '', string.punctuation)).lower()
+    sense = s2v.get_best_sense(word_preprocessed.replace(" ", "_"))
+    return sense is not None
 
 
+class GenerateQuestions:
+    
+    def __init__(self):
+        # Initialize the tokenizer for T5
+        self.tokenizer = T5Tokenizer.from_pretrained('t5new/tokenizer/')
+        # Load the pre-trained T5 model
+        self.model = T5ForConditionalGeneration.from_pretrained('t5New/newmodel')
+        # Set the device to use either CUDA or CPU depending on availability
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+        # Load the SpaCy model for English language processing
+        self.nlp = spacy.load('en_core_web_sm')
+        # Load the Sense2Vec model
+        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # Load the Brown corpus and calculate the frequency distribution of its words
+        self.fdist = FreqDist(brown.words())
+        # Initialize the NormalizedLevenshtein algorithm for calculating string similarity
+        self.normalized_levenshtein = NormalizedLevenshtein()
+        # Set the seed for reproducibility
+        self.set_seed(42)
+   
+    def set_seed(self, seed):
+        # Set the seed for the random number generators in PyTorch and NumPy
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+            
+    def predict_mcq(self, modelInputs):
+        # Start measuring the execution time.
+        start_time = time.time()
+        # Extract the input text and the maximum number of questions from the modelInputs.
+        input_text = modelInputs.get("input_text")
+        max_questions = modelInputs.get("max_questions")
+        # Tokenize the input text into sentences and join them into a single string.
+        sentences = sentence_tokenize(input_text)
+        modified_text = " ".join(sentences)
+        # Extract the keywords from the modified text using the provided NLP tools.
+        keywords = get_keywords(self.nlp, modified_text, max_questions, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        # Map each keyword to a list of up to three sentences that contain it.
+        keyword_sentence_mapping = generate_keyword_sentences(keywords, sentences)
+        for keyword in keyword_sentence_mapping:
+            keyword_sentence_mapping[keyword] = " ".join(keyword_sentence_mapping[keyword][:3])
+        # Generate multiple-choice questions from the keyword-sentence mappings.
+        final_output = {}
+        if keyword_sentence_mapping:
+            try:
+                generated_questions = generate_questions_mcq(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
+            except:
+                # Ignore any errors during the question generation process.
+                pass
+            else:
+                # Fill in the final output dictionary with the generated questions and some metadata.
+                final_output["statement"] = modified_text
+                final_output["questions"] = generated_questions["questions"]
+                final_output["time_taken"] = time.time() - start_time
+                # Free up any CUDA memory if running on a GPU.
+                if torch.device == "cuda":
+                    torch.cuda.empty_cache()
+        # Return the final output dictionary.
+        return final_output
+        
 
-def generate_question(context, questionCount):
-    summary_text = context
-    np = get_keywords(context, summary_text, questionCount)
-    questions = []
-    correctAnswers = []
-    distractor1 = []
-    distractor2 = []
-    distractor3 = []
-    for answer in np:
-        ques = get_question(summary_text, answer, question_model, question_tokenizer)
-        distractors = get_distractors(answer.capitalize(), ques, s2v, sentence_transformer_model, 40, 0.2)
-        questions.append(ques)
-        correctAnswers.append(answer.capitalize())
-        if len(distractors) > 0:
-            for i, distractor in enumerate(distractors[:4]):
-              if i == 0:
-                  distractor1.append(distractor)
-              elif i == 1:
-                  distractor2.append(distractor)
-              elif i == 2:
-                  distractor3.append(distractor)
+
+
+
+    def predict_shortq(self, modelInputs):
+        inp = {
+            "input_text": modelInputs.get("input_text"),
+            "max_questions": modelInputs.get("max_questions")
+        }
+
+        text = inp['input_text']
+        sentences = sentence_tokenize(text)
+        joiner = " "
+        modified_text = joiner.join(sentences)
+
+
+        keywords = get_keywords(self.nlp,modified_text,inp['max_questions'],self.s2v,self.fdist,self.normalized_levenshtein,len(sentences) )
+
+
+        keyword_sentence_mapping = generate_keyword_sentences(keywords, sentences)
+        
+        for k in keyword_sentence_mapping.keys():
+            text_snippet = " ".join(keyword_sentence_mapping[k][:3])
+            keyword_sentence_mapping[k] = text_snippet
+
+        final_output = {}
+
+        if len(keyword_sentence_mapping.keys()) == 0:
+            print('ZERO')
+            return final_output
         else:
-            for i, distractor in enumerate(distractors[:4]):
-              if i == 0:
-                  distractor1.append("Couldnt Generate")
-              elif i == 1:
-                  distractor2.append("Couldnt Generate")
-              elif i == 2:
-                  distractor3.append("Couldnt Generate")
+            
+            generated_questions = generate_normal_questions(keyword_sentence_mapping,self.device,self.tokenizer,self.model)
+            print(generated_questions)
 
-    print(questions, correctAnswers, distractor1, distractor2, distractor3)
-    return questions, correctAnswers, distractor1, distractor2, distractor3
+            
+        final_output["statement"] = modified_text
+        final_output["questions"] = generated_questions["questions"]
+        
+        if torch.device=='cuda':
+            torch.cuda.empty_cache()
+
+        return final_output
+            
+  
+    def paraphrase(self,modelInputs):
+        start = time.time()
+        inp = {
+            "input_text": modelInputs.get("input_text"),
+            "max_questions": modelInputs.get("max_questions")
+        }
+
+        text = inp['input_text']
+        num = inp['max_questions']
+        
+        self.sentence= text
+        self.text= "paraphrase: " + self.sentence + " </s>"
+
+        encoding = self.tokenizer.encode_plus(self.text,pad_to_max_length=True, return_tensors="pt")
+        input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
+
+        output_beam_search_decodes = self.model.generate(
+            input_ids=input_ids,
+            attention_mask=attention_masks,
+            max_length= 50,
+            num_beams=50,
+            num_return_sequences=num,
+            no_repeat_ngram_size=2,
+            early_stopping=True
+            )
+        final_outputs =[]
+        for output_beam_search_decode in output_beam_search_decodes:
+            sent = self.tokenizer.decode(output_beam_search_decode, skip_special_tokens=True,clean_up_tokenization_spaces=True)
+            if sent.lower() != self.sentence.lower() and sent not in final_outputs:
+                final_outputs.append(sent)
+        
+        output= {}
+        output['Question']= text
+        output['Count']= num
+        output['Paraphrased Questions']= final_outputs
+        
+        for i, final_output in enumerate(final_outputs):
+            print("{}: {}".format(i, final_output))
+
+        if torch.device=='cuda':
+            torch.cuda.empty_cache()
+        
+        return output
+
+
+class BoolQGen:
+       
+    def __init__(self):
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+        model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_boolean_questions')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        # model.eval()
+        self.device = device
+        self.model = model
+        self.set_seed(42)
+        
+    def set_seed(self,seed):
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+    def random_choice(self):
+        a = random.choice([0,1])
+        return bool(a)
+    
+
+    def predict_boolq(self,modelInputs):
+        start = time.time()
+        inp = {
+            "input_text": modelInputs.get("input_text"),
+            "max_questions": modelInputs.get("max_questions")
+        }
+
+        text = inp['input_text']
+        num= inp['max_questions']
+        sentences = sentence_tokenize(text)
+        joiner = " "
+        modified_text = joiner.join(sentences)
+        answer = self.random_choice()
+        form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
+
+        encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
+        input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
+
+        output = decode_beam (input_ids, attention_masks,self.model,self.tokenizer)
+        if torch.device=='cuda':
+            torch.cuda.empty_cache()
+        
+        final= {}
+        final['Text']= text
+        final['Count']= num
+        final['Boolean Questions']= output
+            
+        return final
+            
+class AnswerPredictor:
+    def __init__(self):
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+        model = T5ForConditionalGeneration.from_pretrained('Parth/boolean')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        # model.eval()
+        self.device = device
+        self.model = model
+        self.set_seed(42)
+    def set_seed(self,seed):
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    def decode_greedy (inp_ids,attn_mask,model,tokenizer):
+        output_greedy_decode = model.generate(input_ids=inp_ids, attention_mask=attn_mask, max_length=256)
+        Question =  tokenizer.decode(output_greedy_decode[0], skip_special_tokens=True,clean_up_tokenization_spaces=True)
+        return Question.strip().capitalize()
+    def predict_answer(self,modelInputs):
+        start = time.time()
+        inp = {
+            "input_text": modelInputs.get("input_text"),
+            "input_question" : modelInputs.get("input_question")
+        }
+        context = inp["input_text"]
+        question = inp["input_question"]
+        input = "question: %s <s> context: %s </s>" % (question,context)
+        encoding = self.tokenizer.encode_plus(input, return_tensors="pt")
+        input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
+        output_greedy_decode = self.model.generate(input_ids=input_ids, attention_mask=attention_masks, max_length=256)
+        Question =  self.tokenizer.decode(output_greedy_decode[0], skip_special_tokens=True,clean_up_tokenization_spaces=True)
+        output = Question.strip().capitalize()
+        return output
+
+
+# qe= BoolQGen()
+# output = qe.predict_boolq(modelInputs)
+# pprint(output)
+
+
+def generate_question(context, question_count):
+    """Generate multiple-choice questions based on a given context.
+
+    Args:
+        context (str): The text from which to generate questions.
+        question_count (int): The number of questions to generate.
+
+    Returns:
+        A tuple of lists containing the generated questions, correct answers, and distractors.
+    """
+    classMCQ = GenerateQuestions()
+    if question_count > 2:
+        question_count += 1
+    model_inputs = {
+        "input_text": context,
+        "max_questions": question_count
+    }
+    output = classMCQ.predict_mcq(model_inputs)
+    questions_output = output['questions']
+    for question in questions_output:
+        while len(question['options']) < 3:
+            question['options'].append('-')
+    questions = [q['question_statement'] for q in questions_output]
+    correct_answers = [a['answer'].capitalize() for a in questions_output]
+    distractor1 = [d['options'][0] for d in questions_output]
+    distractor2 = [d['options'][1] for d in questions_output]
+    distractor3 = [d['options'][2] for d in questions_output]
+    print(questions, correct_answers, distractor1, distractor2, distractor3)
+    return questions, correct_answers, distractor1, distractor2, distractor3
+  # np = get_keywords(context, summary_text, questionCount)
+    # questions = []
+    # correctAnswers = []
+    # distractor1 = []
+    # distractor2 = []
+    # distractor3 = []
+    # for answer in np:
+    #     ques = get_question(summary_text, answer, question_model, question_tokenizer)
+    #     distractors = get_distractors(answer.capitalize(), ques, s2v, sentence_transformer_model, 40, 0.2)
+    #     questions.append(ques)
+    #     correctAnswers.append(answer.capitalize())
+    #     if len(distractors) > 0:
+    #         for i, distractor in enumerate(distractors[:4]):
+    #           if i == 0:
+    #               distractor1.append(distractor)
+    #           elif i == 1:
+    #               distractor2.append(distractor)
+    #           elif i == 2:
+    #               distractor3.append(distractor)
+    #     else:
+    #         for i, distractor in enumerate(distractors[:4]):
+    #           if i == 0:
+    #               distractor1.append("Couldnt Generate")
+    #           elif i == 1:
+    #               distractor2.append("Couldnt Generate")
+    #           elif i == 2:
+    #               distractor3.append("Couldnt Generate")
+    # print(questions, correctAnswers, distractor1, distractor2, distractor3)
+    # return questions, correctAnswers, distractor1, distractor2, distractor3
