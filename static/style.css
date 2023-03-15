@@ -357,26 +357,30 @@ input[type="range"]::-webkit-slider-thumb:after{
   display: inline-block;
   outline: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 28px;
   line-height: 1;
   border-radius: 12px;
   transition-property: background-color,border-color,color,box-shadow,filter;
   transition-duration: .3s;
-  border: 1px solid transparent;
   letter-spacing: 2px;
   min-width: 90%;
   text-transform: uppercase;
   white-space: normal;
   font-weight: 700;
   text-align: center;
-  padding: 12px 14px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  border-width: 3px;
+  border-color: #FCBC30;
   color: #fff;
-  background-color: #FCBC30;
-  height: 18px;
-  margin-top: 5px;
+  background-color: rgba(253,214,130, 0.1);
+  height: 340px; 
+
 }
 .add-question:hover{
-  background-color: #b08321;
+  background-color: rgba(252,188,48, 0.1);
 }
 
 .top-container{

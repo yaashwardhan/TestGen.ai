@@ -47,7 +47,7 @@ $(document).ready(function() {
           html += '</div>';
           html += '</div>';
       }
-      html += '<span class="add-question">ADD QUESTION</span>';
+      html += '<span class="add-question">ADD NEW<br>QUESTION</span>';
       html += '</div>';
       html += '</div>';
       
