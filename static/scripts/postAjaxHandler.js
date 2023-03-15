@@ -26,29 +26,74 @@ $(document).ready(function() {
         var distractor2 = response['distractor2'];
         var distractor3 = response['distractor3'];
         var html = '';
-        html += '<div class="question-container-outer">';
-        html += '<p class="smallheadings">Generated MCQ</p>';
+        html += '<div class="top-container">';
+        html += '<p class="smallheadings">Generated MCQ</p>'; 
+        html += '</div>';
+        html += '<div class="question-container-outer-parent">';
+        html += '<div class="question-container-outer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">';
+        
         for (var i = 0; i < questions.length; i++) {
           var options = ['Ans: '+correctAnswers[i]].concat(distractor1[i]).concat(distractor2[i]).concat(distractor3[i]);
-          html += '<hr class="lightHr">';
           html += '<div class="question-container">';
           html += '<div class="question">';
-          html += '<div class="question-sidebyside" style="display: flex;align-items: center;"><span class="edit-icon" style="flex: 1;display: flex; justify-content: center; align-items: center;">&#9998;</span><p class="edit-question" style="flex: 7; " contenteditable>' + questions[i] + '</p></div>';
-
+          html += '<div class="question-sidebyside" style="display: flex;align-items: center;"><span class="edit-icon" style="flex: 1;display: flex; justify-content: center; align-items: center;">&#9998;</span><p class="edit-question" style="flex: 7; " contenteditable>' + questions[i] + '</p><span class="delete-icon" style="flex: 1;display: flex; justify-content: center; align-items: center;">&#128465;</span></div>';
           html += '<ul class="options" data-question="' + i + '" data-group="' + i + '">';
           html += '<li class="option" style="color: greenyellow;" data-value="' + options[0] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" +options[0]  + '<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
           html += '<li class="option" data-value="' + options[1] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[1] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
           html += '<li class="option" data-value="' + options[2] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[2] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
           html += '<li class="option" data-value="' + options[3] + '">' + "<span style='color:dimgrey;'>&#9776;</span>" + options[3] +'<span class="remove-option" style="color:#CC5500;">&#8998;</span></li>';
-          
           html += '<div class="custom-option"><input type="text" class="my-input" placeholder="Extra Choice"><span class="add-option">ADD</span></div>';
-    
           html += '</ul>';
           html += '</div>';
           html += '</div>';
       }
+      html += '<span class="add-question">ADD QUESTION</span>';
       html += '</div>';
+      html += '</div>';
+      
       $('#questions').html(html);
+      // Add click event listener to plus button
+      $(document).on('click', '.add-question', function() {
+        var $container = $(this);
+        var $questionContainer = $('<div>', {'class': 'question question-container'});
+        var $question = $('<div>', {'class': 'question-sidebyside', 'style': 'display: flex;align-items: center;'});
+        var $editIcon = $('<span>', {'class': 'edit-icon', 'style': 'flex: 1;display: flex; justify-content: center; align-items: center;'}).html('&#9998;');
+        var $editQuestion = $('<p>', {'class': 'edit-question', 'style': 'flex: 7;', 'contenteditable': true}).text('Enter your question here');
+        var $deleteIcon = $('<span>',{'class':"delete-icon" , 'style':"flex: 1;display: flex; justify-content: center; align-items: center;"}).html('&#128465;');
+        var $options = $('<ul>', {'class': 'options', 'data-question': questions.length, 'data-group': questions.length});
+        var $customOption = $('<div>', {'class': 'custom-option'});
+        var $input = $('<input>', {'type': 'text', 'class': 'my-input', 'placeholder': 'Extra Choice'});
+        var $addOption = $('<span>', {'class': 'add-option'}).text('ADD');
+
+        $question.append($editIcon);
+        $question.append($editQuestion);
+        $question.append($deleteIcon);
+        $questionContainer.append($question);
+
+        $customOption.append($input);
+        $customOption.append($addOption);
+        $options.append($customOption);
+        $questionContainer.append($options);
+        
+
+        $container.after($questionContainer);
+        $('.question-container-outer').append($container);
+
+        new Sortable($options.get(0), {
+          group: questions.length,
+          animation: 150,
+          filter: '.add-option'
+        });
+      
+        // Add click event listener to edit button/icon
+        $(document).on('click', '.edit-button', function() {
+          var $questionText = $(this).parent();
+          $questionText.toggleClass('editing');
+          $questionText.find('.edit-question').focus();
+        });
+      });
+
+
       console.log(questions);
       console.log(correctAnswers);
       console.log(distractor1);
@@ -66,6 +111,11 @@ $(document).ready(function() {
       // Remove option
       $(document).on('click', '.remove-option', function() {
         $(this).parent().remove();
+      });
+
+      // Add click event listener to delete button/icon
+      $(document).on('click', '.delete-icon', function() {
+        $(this).closest('.question-container').remove();
       });
   
       // Add custom option

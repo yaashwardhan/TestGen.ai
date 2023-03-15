@@ -267,8 +267,6 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
         batch_text.append(text)
 
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
-
     print ("Generating...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 

@@ -32,22 +32,23 @@
         <div style="flex: 7; text-align: center;">
           <img src="static/assets/gradientImage.png" style="max-width: 100%; height: auto;">
         </div>
-      </div>   
+      </div> 
+      <hr style="border-top: 1px solid #616161;margin-left: 40px;margin-right: 40px; margin-top: 5px; margin-bottom: 20px;">
+       
       <form onsubmit="return validateRange()" style="padding-left: 40px;padding-right: 40px;">
-        <hr style="border-top: 1px solid #616161; margin-top: 5px; margin-bottom: 20px;">
-        
+        <input style="margin-bottom: 10px;float: right;" type="submit" class="bn632" value="Generate Questions">
         <div style="display: flex; justify-content: left;align-items: flex-end;">
           <div style="margin-right: 40px;">
-            <label for="context" class="subsubheadings" style="color:#b2b2b2;font-size: 12px;margin-bottom: 30px">Current Word Count: <span id="word-count" style="color: white;">0</span></label><br><br>
             <label for="question-count" class="subsubheadings2">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label><br>
             <input type="range" id="question-count" min="0" max="10" step="1" value="1">
           </div>
-          <input style="margin-bottom: 10px;" type="submit" class="bn632" value="Generate Questions">
+          
         </div>
       
-        <div style="display:flex;padding-top: 10px;">
-          <div style="display:flex; flex-direction: column; align-items: flex-start; flex-grow: 4;">
-            <textarea class="contextPara" id="context" name="context" rows="18" style="color: #ffc475;width: 100%;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners who want to work more efficiently.  
+        <div style="display:flex;padding-top: 10px;flex-direction: column;margin-right: 40px; ">
+          <div style="display:flex; flex-direction: column; align-items: flex-start; ">
+            <label for="context" class="subsubheadingsCurrent" style="color:#b2b2b2; font-size: 12px;padding-left: 17px;padding-top: 10px;margin-bottom: 30px">Current Word Count: <span id="word-count" style="color: white;">0</span></label>
+            <textarea class="contextPara" id="context" name="context" rows="15" style="color: #ffc475;padding-top: 30px;width: 100%;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners who want to work more efficiently.  
 
 Python is a versatile, so it can be used for many tasks. It's commonly used in web development to build websites and web applications. It's also popular in scientific computing, where it's used to analyze and manipulate large datasets. 
 
@@ -57,16 +58,19 @@ Additionally, Python is an open-source language, which means that it's free to u
             
           </div>
 
-          <div style="display:flex; flex-direction: column;margin-left:40px;flex-grow: 3; justify-content: center; align-items: center;">
-            <div id="loading-screen" style="padding-bottom: 150px;">
-              <img width=340px src="static/assets/NN-spinner.gif">
+          <div style="display:flex; flex-direction: column;flex-grow: 1; justify-content: start; align-items: start;">
+            <div id="loading-screen" style="padding-top:10px;padding-bottom: 50px;">
+              <img width=480px src="static/assets/NN-spinner.gif">
+        
             </div>
-            <div id="questions" class = "questionHeading"><img style="padding-bottom: 147px;padding-left: 30px;color: #fff;" width=340px src="static/assets/NN-spinner2.png"></div>
           </div>
+            <div id="questions" class = "questionHeading"><img style="padding-top:10px;padding-bottom: 47px;color: #fff;" width=480px src="static/assets/NN-spinner2.png"></div>
+          
+          <span id="save-button" style="float: right;margin-top: 18px;" class="bn6322">UPLOAD QUESTIONS</span> 
 
         </div>  
       </form> 
-      <button id="save-button" style="float: right;" class="bn632">Save Questions</button>
+      
     </div>
   </body>
 
@@ -75,11 +79,10 @@ Additionally, Python is an open-source language, which means that it's free to u
     // Save questions to JSON file
     $('#save-button').click(function() {
       var questionsData = [];
-
       $('.question').each(function() {
         var question = $(this).find('p').text();
         var options = [];
-
+        console.log('yes2');
         $(this).find('.option').each(function() {
           var option = $(this).text();
           options.push(option);
@@ -93,6 +96,9 @@ Additionally, Python is an open-source language, which means that it's free to u
         questionsData.push(questionData);
       });
   
+      if (questionsData.length === 0) {
+      alert("Please Generate Questions First!");
+    } else {
       var json = JSON.stringify(questionsData, null, 2).replace(/\u2326/g, '').replace(/\u2630/g, '').replace(/\u270E/g,'');
       console.log(json);
       var blob = new Blob([json], {type: "application/json"});
@@ -104,12 +110,13 @@ Additionally, Python is an open-source language, which means that it's free to u
       a.textContent = 'Download questions';
       document.body.appendChild(a);
 
-      a.click();
+      // a.click();
 
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    });
-  </script>
+    }
+  });
+</script>
 
 </html>
 
