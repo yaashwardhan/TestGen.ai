@@ -3,8 +3,10 @@
   <link rel="stylesheet" href="static/style.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="static/scripts/postAjaxHandler.js"></script>
+  <script src="static/scripts/postAjaxFIBHandler.js"></script>
   <script src="static/scripts/wordCount.js"></script>
   <script src="static/scripts/sliderDynamics.js"></script>
+  <script src="static/scripts/sliderDynamics2.js"></script>
   <script src="static/scripts/validateRange.js"></script>
   <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
   <script src="http://127.0.0.1:5500/livereload.js"></script>
@@ -34,30 +36,57 @@
         </div>
       </div> 
       <hr style="border-top: 1px solid #616161;margin-left: 40px;margin-right: 40px; margin-top: 5px; margin-bottom: 20px;">
-       
+  
+      <label for="titleOfTest" class="subsubheadings2" style="margin-left: 40px;font-size: 24px;">Test Title: </label>
+      <input class="titleTest" style="margin-left: 10px;color: #fff;width: 400px;" type="text" id="titleOfTest"></input>
+      <br><br>
+      
+      <div style="display: flex; align-items: center;">
+
+      <label for="durationOfTest" class="subsubheadings2" style="margin-left: 40px;font-size: 24px;">Duration: <span id="slider-value2" style="color: greenyellow;font-weight: 800;font-size: 18px;">5</span> <span style="color: white;font-weight: 400;font-size: 12px;">minutes</span></label>
+      <input type="range" id="durationOfTest" min="5" max="45" step="5" value="5">
+      
+    </div>
+      
+      
+      <br><br>
       <form onsubmit="return validateRange()" style="padding-left: 40px;padding-right: 40px;">
         <input style="margin-bottom: 10px;float: right;" type="submit" class="bn632" value="Generate Questions">
-        <div style="display: flex; justify-content: left;align-items: flex-end;">
-          <div style="margin-right: 40px;">
-            <label for="question-count" class="subsubheadings2">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label><br>
-            <input type="range" id="question-count" min="0" max="10" step="1" value="1">
-          </div>
+        <div class="customRadio">
+          <input type="radio" name="select" id="option-1" checked>
+          <input type="radio" name="select" id="option-2">
+            <label for="option-1" class="option option-1">
+              <div class="dot"></div>
+               <span>Multiple Choice</span>
+               </label>
+            <label for="option-2" class="option option-2">
+              <div class="dot"></div>
+               <span>Fill In the Blanks</span>
+            </label>
+         </div>
+        <div style="display: flex; align-items: center;">
           
-        </div>
+          <label for="question-count" class="subsubheadings2" style="margin-right: 10px;font-size: 20px;">Number of Questions: <span id="slider-value" style="color: greenyellow;font-weight: 800;font-size: 18px;">0</span></label>
+          <input type="range" id="question-count" min="0" max="10" step="1" value="1">
+          
+       </div>
       
+        
         <div style="display:flex;padding-top: 10px;flex-direction: column;margin-right: 40px; ">
           <div style="display:flex; flex-direction: column; align-items: flex-start; ">
             <label for="context" class="subsubheadingsCurrent" style="color:#b2b2b2; font-size: 12px;padding-left: 17px;padding-top: 10px;margin-bottom: 30px">Current Word Count: <span id="word-count" style="color: white;">0</span></label>
-            <textarea class="contextPara" id="context" name="context" rows="15" style="color: #ffc475;padding-top: 30px;width: 100%;">Python is a programming language that was created in the late 1980s by Guido van Rossum. Its design philosophy emphasizes code readability and simplicity, which means that Python code is easy to read and write. This makes it a great language for beginners who want to work more efficiently.  
+            <textarea class="contextPara" id="context" name="context" rows="15" style="color: #ffc475;padding-top: 30px;width: 100%;">In the vast expanse of the universe, humans have long been captivated by the mysteries of outer space. This journey of exploration and discovery began with ancient astronomers like Ptolemy, who studied celestial bodies and developed the first theories about the Earth's position in the solar system. 
 
-Python is a versatile, so it can be used for many tasks. It's commonly used in web development to build websites and web applications. It's also popular in scientific computing, where it's used to analyze and manipulate large datasets. 
+The invention of the telescope in the early 17th century allowed for more detailed observations of the stars and planets, leading to groundbreaking discoveries like Galileo's observation of Jupiter's moons and Saturn's rings. In the 20th century, the space race between the U.S. and the Soviet Union marked a pivotal moment in human history. 
 
-In addition, Python is commonly used in artificial intelligence and machine learning, where it's used to develop intelligent systems that can learn and make decisions based on data. One of the reasons why Python is so popular is because it has a large and active community. There are many libraries and tools available that can help you get started with Python and accomplish your goals more quickly. 
+In 1957, the Soviets launched Sputnik 1, the first artificial satellite, which was followed by the United States' Explorer 1 in 1958. Yuri Gagarin, a Soviet cosmonaut, became the first human to journey into outer space in 1961, and in 1969, American astronaut Neil Armstrong made history by becoming the first person to set foot on the Moon as part of the Apollo 11 mission. 
 
-Additionally, Python is an open-source language, which means that it's free to use and modify. Overall, Python is a powerful and versatile and is easy to learn and use. Whether you're just starting out or you're an experienced developer, Python can help you build a wide variety of projects and accomplish your goals more quickly and efficiently.</textarea><br>
-            
+Since then, space exploration has continued to expand, with the development of the International Space Station (ISS), robotic missions to Mars, and ambitious plans for future manned missions to the Moon, Mars, and beyond. As we learn more about our universe, the contributions of countless scientists, astronauts, and engineers serve as a testament to humanity's drive to uncover the secrets of the cosmos.</textarea><br>   
           </div>
-
+          <div>
+            <label for="summaryOfTest" class="subsubheadingsCurrent" style="margin-left: 20px;color:#b2b2b2; font-size: 12px;padding-top: 10px;">Test Summary:</label>
+            <textarea class="summaryTest" style="font-size: 12px;margin-left: 1d0px;padding-top: 30px;color: #b2b2b2;width: 400px;" type="text" rows="8" id="summaryOfTest">Summary of the context will be generated here during question generation.</textarea>
+          </div>
           <div style="display:flex; flex-direction: column;flex-grow: 1; justify-content: start; align-items: start;">
             <div id="loading-screen" style="padding-top:10px;padding-bottom: 50px;">
               <img width=480px src="static/assets/NN-spinner.gif">
@@ -95,7 +124,13 @@ Additionally, Python is an open-source language, which means that it's free to u
 
         questionsData.push(questionData);
       });
-  
+      var extraData = {
+        'title': document.getElementById('titleOfTest').value,
+        'correct': document.getElementById('question-count').value,
+        'duration':document.getElementById('durationOfTest').value,
+        'intro': document.getElementById('summaryOfTest').value,
+        };
+      questionsData.push(extraData);
       if (questionsData.length === 0) {
       alert("Please Generate Questions First!");
     } else {

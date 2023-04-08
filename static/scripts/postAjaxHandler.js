@@ -1,14 +1,12 @@
-// Examples:
-// AJAX (Asynchronous JavaScript and XML) is a technique used in web development that allows web pages to update content dynamically without requiring a page reload. AJAX allows web applications to send and receive data asynchronously between the client and server without interfering with the display and behavior of the existing page.
-
 $(document).ready(function() {
   $('form').submit(function(event) {
     event.preventDefault();
     var context = $('#context').val();
     var questionCount = $('#question-count').val();
-    console.log(questionCount);
-
-    // Show loading screen
+    var selectedRadioButton = $('input[type="radio"][name="select"]:checked');
+    var selectedRadioButtonId = selectedRadioButton.attr('id');
+    if (selectedRadioButtonId == 'option-1') {
+      // Show loading screen
     $('#loading-screen').show();
     $('#questions').html('');
     $.ajax({
@@ -20,6 +18,8 @@ $(document).ready(function() {
         'questionCount': questionCount,
       }),
       success: function(response) {
+        var summarized_context = response['summarized_context'];
+        $('#summaryOfTest').val(summarized_context);
         var questions = response['questions'];
         var correctAnswers = response['correctAnswers'];
         var distractor1 = response['distractor1'];
@@ -147,5 +147,43 @@ $(document).ready(function() {
         $('#loading-screen').hide();
       }
     });
+    } else {
+      $('#loading-screen').show();
+      $('#questions').html('');
+      $.ajax({
+        type: 'POST',
+        url: '/generate-FIB',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          'context': context,
+          'questionCount':questionCount,
+        }),
+        success: function(response) {
+          var html = '';
+          html += '<div class="top-container">';
+          html += '<p class="smallheadings">Generated Questions</p>'; 
+          html += '</div>';
+          html += '<div class="fib-question-container">';
+      
+          for (var i = 0; i < response.length; i++) {
+            html += '<div class="fib-question">';
+            html += '<p>' + response[i]['question'] + '</p>';
+            html += '<p style="color: green;"><strong>Answer:</strong> ' + response[i]['answer'] + '</p>';
+            html += '</div>';
+          }
+          html += '</div>';
+        
+          $('#questions').html(html);
+        
+          // Hide loading screen
+          $('#loading-screen').hide();
+        },
+        error: function(xhr, status, error) {
+          console.log(xhr.responseText);
+          $('#loading-screen').hide();
+        }
+      });
+    }
+    
   });
 });
