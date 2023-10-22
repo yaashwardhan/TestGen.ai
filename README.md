@@ -8,6 +8,9 @@
 
 A host can input a paragraph of words and and the platform then generates different types of quizzes from it. For this, keywords were extracted from the paragraph using unsupervised keyphrase extraction with multipartite graphs, which were then passed to a system that employs a transformer model that is finetuned using transfer learning on the SQuAD dataset, using the T5 model and tokenizer to generate questions pertaining to the extracted keyword. Using sense2vec, Normalized Levenshtein distance algorithm and Maximal Marginal Relevance algorithm (cosine similarity), dissimilar distractors were generated to create incorrect options for the question. Using BERT overcame word sense disambiguation for distractor sense classification. Flask was used as the Python app to generate the tests, while Ajax was employed as a handler between the website and the question generation models. JavaScript was used for client-side scripting.
 
+e.g A paragraph as below is entered and questions/distractors are generated.
+<img src="sample.png">
+
 ## Dependencies
 
 | Package              | Tested version |
